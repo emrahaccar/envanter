@@ -1,5 +1,5 @@
 // Envanter - Service Worker v1.0
-const CACHE_VERSION = 'envanter-v1';
+const CACHE_VERSION = 'envanter-v2';
 const SHELL = [
   './',
   './index.html',
