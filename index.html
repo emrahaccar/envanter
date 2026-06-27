@@ -587,11 +587,27 @@ async function api(action, data = {}) {
     throw new Error('config');
   }
   try {
-    const res = await fetch(state.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, data, token: state.token }),
-    });
+    let res;
+    
+    // Foto upload büyük base64 verisi içerir, URL'ye sığmaz, POST kullan.
+    // Diğer her şey GET — Safari/iOS'ta POST + Apps Script 302 redirect sorun çıkarıyor.
+    if (action === 'fotoYukle') {
+      res = await fetch(state.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, data, token: state.token }),
+        redirect: 'follow',
+      });
+    } else {
+      const url = new URL(state.url);
+      url.searchParams.set('action', action);
+      url.searchParams.set('token', state.token);
+      if (data && Object.keys(data).length > 0) {
+        url.searchParams.set('data', JSON.stringify(data));
+      }
+      res = await fetch(url.toString(), { redirect: 'follow' });
+    }
+    
     const json = await res.json();
     if (!json.ok) {
       toast(json.hata || 'Bilinmeyen hata', true);
@@ -1132,13 +1148,12 @@ async function saveSettings() {
   localStorage.setItem('env_url', url);
   localStorage.setItem('env_token', token);
   
-  // Test
+  // Test (GET — POST Safari'de sorun çıkarıyor)
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'ping', token }),
-    });
+    const testUrl = new URL(url);
+    testUrl.searchParams.set('action', 'ping');
+    testUrl.searchParams.set('token', token);
+    const res = await fetch(testUrl.toString(), { redirect: 'follow' });
     const j = await res.json();
     if (j.ok) {
       toast('Bağlantı başarılı');
