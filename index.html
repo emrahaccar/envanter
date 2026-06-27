@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#F7F7F4">
+<title>Envanter</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Envanter">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #F7F7F4;
+  --surface: #FFFFFF;
+  --ink: #1F2421;
+  --ink-soft: #555955;
+  --mute: #888B85;
+  --line: #E5E4DD;
+  --line-soft: #EFEEE8;
+  --accent: #6A7B5C;
+  --accent-deep: #4E5C44;
+  --accent-soft: #E8ECE2;
+  --warn: #B85C3A;
+  --safe: 0;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--ink); font-family: 'DM Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.5; min-height: 100vh; }
+body { padding-top: var(--safe-top); padding-bottom: calc(72px + var(--safe-bottom)); }
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+input, textarea, select { font: inherit; color: inherit; }
+img { display: block; max-width: 100%; }
+
+/* ===== Top bar ===== */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--bg);
+  padding: 16px 20px 12px;
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s;
+}
+.topbar.scrolled { border-bottom-color: var(--line); }
+.brand {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 20px; font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.brand em { font-style: italic; color: var(--accent); font-weight: 400; }
+.topbar-action {
+  font-size: 13px; color: var(--mute);
+  padding: 6px 10px; border-radius: 8px;
+}
+.topbar-action:hover { background: var(--line-soft); color: var(--ink); }
+
+/* ===== Views ===== */
+.view { display: none; padding: 8px 20px 40px; }
+.view.active { display: block; }
+
+/* ===== Search view ===== */
+.search-input-wrap { position: relative; margin: 12px 0 24px; }
+.search-input {
+  width: 100%;
+  padding: 16px 18px 16px 46px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 16px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.search-icon {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--mute); pointer-events: none;
+}
+
+.section-label {
+  font-family: 'Newsreader', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--mute);
+  margin: 24px 0 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label::before, .section-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--line);
+}
+
+/* ===== Item card ===== */
+.item-list { display: flex; flex-direction: column; gap: 10px; }
+.item-card {
+  display: flex; align-items: stretch; gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: left;
+  width: 100%;
+  transition: border-color .15s, transform .1s;
+}
+.item-card:active { transform: scale(0.99); }
+.item-card:hover { border-color: var(--ink-soft); }
+.item-thumb {
+  width: 64px; height: 64px;
+  border-radius: 8px;
+  background: var(--line-soft);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--mute);
+}
+.item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.item-name { font-weight: 500; font-size: 15px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-loc {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-deep);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.item-loc .sep { color: var(--mute); font-weight: 500; margin: 0 6px; }
+.item-loc .extra { color: var(--ink-soft); font-weight: 500; font-family: 'DM Sans', sans-serif; font-size: 13px; }
+
+/* ===== Empty / loading states ===== */
+.empty {
+  text-align: center; padding: 48px 20px;
+  color: var(--mute);
+}
+.empty-title {
+  font-family: 'Newsreader', serif;
+  font-size: 18px; font-style: italic;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.empty-sub { font-size: 14px; }
+.spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Form ===== */
+.form { display: flex; flex-direction: column; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; color: var(--ink-soft); font-weight: 500; }
+.field input[type="text"], .field textarea, .field select {
+  width: 100%; padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 16px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  font-family: inherit;
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field textarea { resize: vertical; min-height: 72px; }
+.field-hint { font-size: 12px; color: var(--mute); margin-top: 2px; }
+
+.segment {
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--line-soft);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+}
+.segment button {
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  transition: all .15s;
+}
+.segment button.on {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.photo-zone {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: var(--line-soft);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; color: var(--mute);
+  cursor: pointer;
+  overflow: hidden;
+}
+.photo-zone:hover { border-color: var(--accent); color: var(--accent); }
+.photo-zone img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.photo-zone .change-hint {
+  position: absolute; bottom: 8px; right: 8px;
+  background: rgba(0,0,0,0.6); color: white;
+  padding: 6px 10px; border-radius: 6px;
+  font-size: 12px;
+}
+.photo-zone input { display: none; }
+.photo-zone-icon { width: 32px; height: 32px; opacity: 0.6; }
+.photo-zone-text { font-size: 14px; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background .15s, transform .1s;
+  width: 100%;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-deep); }
+.btn-primary:disabled { background: var(--mute); opacity: 0.7; cursor: not-allowed; }
+.btn-ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+.btn-ghost:hover { background: var(--line-soft); }
+.btn-danger { color: var(--warn); background: transparent; border: 1px solid var(--line); }
+.btn-danger:hover { background: #FBEBE3; border-color: var(--warn); }
+
+/* ===== Header with back ===== */
+.subheader {
+  display: flex; align-items: center; gap: 8px;
+  margin: 4px 0 20px;
+}
+.back-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-soft);
+}
+.back-btn:hover { background: var(--line-soft); color: var(--ink); }
+.page-title {
+  font-family: 'Newsreader', serif;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* ===== Liste tabs ===== */
+.tabs {
+  display: flex; gap: 4px;
+  background: var(--line-soft);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 20px;
+}
+.tabs button {
+  flex: 1; padding: 9px;
+  border-radius: 7px;
+  font-size: 14px; font-weight: 500;
+  color: var(--ink-soft);
+}
+.tabs button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+/* ===== Liste rows ===== */
+.row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.row-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  padding: 4px 8px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+.row-body { flex: 1; min-width: 0; }
+.row-title { font-weight: 500; color: var(--ink); }
+.row-sub { font-size: 13px; color: var(--mute); margin-top: 2px; }
+.row-action {
+  color: var(--mute);
+  padding: 6px;
+  border-radius: 6px;
+}
+.row-action:hover { background: var(--line-soft); color: var(--warn); }
+
+/* ===== Bottom nav ===== */
+.bottomnav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  background: rgba(247, 247, 244, 0.92);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--line);
+  padding-bottom: var(--safe-bottom);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+}
+.bottomnav button {
+  padding: 12px 8px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  color: var(--mute);
+  font-size: 11px;
+  font-weight: 500;
+  transition: color .15s;
+}
+.bottomnav button.on { color: var(--accent-deep); }
+.bottomnav svg { width: 22px; height: 22px; }
+
+/* ===== Modal ===== */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(31, 36, 33, 0.4);
+  display: none; align-items: flex-end; justify-content: center;
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.modal-bg.on { display: flex; }
+.modal {
+  background: var(--bg);
+  width: 100%; max-width: 520px;
+  border-radius: 18px 18px 0 0;
+  padding: 20px 20px calc(20px + var(--safe-bottom));
+  max-height: 80vh; overflow-y: auto;
+}
+@media (min-width: 520px) {
+  .modal-bg { align-items: center; }
+  .modal { border-radius: 14px; max-height: 85vh; }
+}
+.modal h3 {
+  font-family: 'Newsreader', serif;
+  font-size: 20px; font-weight: 500;
+  margin-bottom: 16px;
+}
+.modal .actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal .actions .btn { flex: 1; }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: white;
+  padding: 12px 18px; border-radius: 10px;
+  font-size: 14px; font-weight: 500;
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: var(--warn); }
+
+/* ===== Detail view ===== */
+.detail-photo {
+  width: 100%; aspect-ratio: 1;
+  background: var(--line-soft);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.detail-photo img { width: 100%; height: 100%; object-fit: cover; }
+.detail-name {
+  font-family: 'Newsreader', serif;
+  font-size: 26px; font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+.detail-loc {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--accent-deep);
+  margin-bottom: 24px;
+  font-weight: 600;
+}
+.detail-meta-row {
+  display: flex; justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.detail-meta-label { color: var(--mute); font-size: 13px; }
+.detail-meta-value { font-weight: 500; text-align: right; }
+.detail-actions { display: flex; gap: 10px; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOPBAR
+============================================================ -->
+<div class="topbar" id="topbar">
+  <div class="brand">envanter<em> · ev</em></div>
+  <button class="topbar-action" onclick="goto('settings')">Ayarlar</button>
+</div>
+
+<!-- ============================================================
+     ARA (SEARCH) VIEW
+============================================================ -->
+<div class="view active" id="view-search">
+  <div class="search-input-wrap">
+    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="search-input" class="search-input" type="search" placeholder="Eşya ara..." autocomplete="off">
+  </div>
+  <div id="search-results"></div>
+</div>
+
+<!-- ============================================================
+     EKLE (ADD ITEM) VIEW
+============================================================ -->
+<div class="view" id="view-add">
+  <div class="subheader">
+    <div class="page-title">Yeni eşya</div>
+  </div>
+  <form class="form" id="add-form" onsubmit="event.preventDefault(); kaydetEsya();">
+    <label class="photo-zone" id="photo-zone">
+      <input type="file" accept="image/*" id="photo-input" capture="environment">
+      <svg class="photo-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l2-3h4l2 3"/></svg>
+      <div class="photo-zone-text">Fotoğraf çek veya seç</div>
+    </label>
+
+    <div class="field">
+      <label>Eşya adı</label>
+      <input type="text" id="f-isim" placeholder="örn. Çınar'ın kış botları" required>
+    </div>
+
+    <div class="field">
+      <label>Konum türü</label>
+      <div class="segment">
+        <button type="button" class="on" data-konum="kutu" onclick="setKonumTipi('kutu')">Kutuda</button>
+        <button type="button" data-konum="serbest" onclick="setKonumTipi('serbest')">Serbest yer</button>
+      </div>
+    </div>
+
+    <div class="field" id="field-kutu">
+      <label>Kutu</label>
+      <select id="f-kutu" required></select>
+      <div class="field-hint"><a href="#" onclick="event.preventDefault(); goto('listeler'); setListeTab('kutu');" style="color:var(--accent-deep)">Kutu yönet →</a></div>
+    </div>
+
+    <div class="field" id="field-serbest" style="display:none">
+      <label>Konum tarifi</label>
+      <input type="text" id="f-serbest" placeholder="örn. Salon vitrin 2. çekmece">
+      <div class="field-hint">Hangi odadasın? Aşağıdan seç.</div>
+      <select id="f-oda-serbest" style="margin-top:6px"></select>
+    </div>
+
+    <div class="field">
+      <label>Etiketler <span style="color:var(--mute); font-weight:400">(opsiyonel)</span></label>
+      <input type="text" id="f-etiketler" placeholder="kış, çocuk, kıyafet">
+      <div class="field-hint">Virgülle ayır.</div>
+    </div>
+
+    <div class="field">
+      <label>Notlar <span style="color:var(--mute); font-weight:400">(opsiyonel)</span></label>
+      <textarea id="f-notlar" placeholder="Marka, numara, satın alma tarihi..."></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary" id="kaydet-btn">Kaydet</button>
+  </form>
+</div>
+
+<!-- ============================================================
+     LISTELER VIEW
+============================================================ -->
+<div class="view" id="view-listeler">
+  <div class="subheader">
+    <div class="page-title">Listeler</div>
+  </div>
+  <div class="tabs">
+    <button class="on" data-tab="esya" onclick="setListeTab('esya')">Eşyalar</button>
+    <button data-tab="kutu" onclick="setListeTab('kutu')">Kutular</button>
+    <button data-tab="oda" onclick="setListeTab('oda')">Odalar</button>
+  </div>
+  <div id="liste-content"></div>
+  <button class="btn btn-ghost" id="liste-add-btn" style="margin-top:16px" onclick="listeAddNew()">+ Yeni ekle</button>
+</div>
+
+<!-- ============================================================
+     DETAY VIEW
+============================================================ -->
+<div class="view" id="view-detail">
+  <div class="subheader">
+    <button class="back-btn" onclick="goto('search')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+  </div>
+  <div id="detail-content"></div>
+</div>
+
+<!-- ============================================================
+     AYARLAR VIEW
+============================================================ -->
+<div class="view" id="view-settings">
+  <div class="subheader">
+    <div class="page-title">Ayarlar</div>
+  </div>
+  <div class="form">
+    <div class="field">
+      <label>Backend URL</label>
+      <input type="text" id="s-url" placeholder="https://script.google.com/macros/s/.../exec">
+      <div class="field-hint">Apps Script web app URL'in</div>
+    </div>
+    <div class="field">
+      <label>Token</label>
+      <input type="text" id="s-token" placeholder="Kod.gs içindeki SECRET_TOKEN">
+      <div class="field-hint">Sen ve eşin aynı token'ı kullanırsınız</div>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()">Kaydet ve bağlantıyı test et</button>
+    <button class="btn btn-ghost" onclick="goto('search')">Vazgeç</button>
+
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--mute);">
+      <div style="font-family: 'Newsreader', serif; font-style: italic; color: var(--ink-soft); margin-bottom: 8px;">Hakkında</div>
+      Envanter v1.0 — küçük evlerde "neyi nereye koymuştum" derdine ev yapımı çare.
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     BOTTOM NAV
+============================================================ -->
+<div class="bottomnav">
+  <button data-nav="search" class="on" onclick="goto('search')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    Ara
+  </button>
+  <button data-nav="add" onclick="goto('add')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    Ekle
+  </button>
+  <button data-nav="listeler" onclick="goto('listeler')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1.5"/><circle cx="4" cy="12" r="1.5"/><circle cx="4" cy="18" r="1.5"/></svg>
+    Listeler
+  </button>
+  <button data-nav="settings" onclick="goto('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Ayar
+  </button>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this) closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  url: localStorage.getItem('env_url') || '',
+  token: localStorage.getItem('env_token') || '',
+  odalar: [],
+  kutular: [],
+  esyalar: [],
+  konumTipi: 'kutu',
+  fotoBase64: null,
+  fotoContentType: null,
+  listeTab: 'esya',
+};
+
+// ============================================================
+// API
+// ============================================================
+async function api(action, data = {}) {
+  if (!state.url || !state.token) {
+    toast('Önce Ayarlar\'dan URL ve token gir', true);
+    goto('settings');
+    throw new Error('config');
+  }
+  try {
+    const res = await fetch(state.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, data, token: state.token }),
+    });
+    const json = await res.json();
+    if (!json.ok) {
+      toast(json.hata || 'Bilinmeyen hata', true);
+      throw new Error(json.hata);
+    }
+    return json.data;
+  } catch (err) {
+    if (err.message !== 'config') toast('Bağlantı hatası: ' + err.message, true);
+    throw err;
+  }
+}
+
+async function refreshAll() {
+  try {
+    const [o, k, e] = await Promise.all([
+      api('odaListe'), api('kutuListe'), api('esyaListe')
+    ]);
+    state.odalar = o || [];
+    state.kutular = k || [];
+    state.esyalar = e || [];
+  } catch {}
+}
+
+// ============================================================
+// NAV
+// ============================================================
+function goto(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.querySelectorAll('.bottomnav button').forEach(b => {
+    b.classList.toggle('on', b.dataset.nav === view);
+  });
+  window.scrollTo(0, 0);
+  
+  // View-specific init
+  if (view === 'search') renderSearchResults();
+  if (view === 'add') initAddView();
+  if (view === 'listeler') renderListe();
+  if (view === 'settings') {
+    document.getElementById('s-url').value = state.url;
+    document.getElementById('s-token').value = state.token;
+  }
+}
+
+// ============================================================
+// SEARCH
+// ============================================================
+const searchInput = document.getElementById('search-input');
+let searchTimeout;
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(renderSearchResults, 200);
+});
+
+async function renderSearchResults() {
+  const q = searchInput.value.trim().toLowerCase();
+  const container = document.getElementById('search-results');
+  
+  if (!state.url || !state.token) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty-title">Önce ayarlar</div>
+        <div class="empty-sub">Backend URL ve token'ı gir, başlayalım.</div>
+      </div>`;
+    return;
+  }
+  
+  if (state.esyalar.length === 0) {
+    container.innerHTML = '<div class="empty"><span class="spinner"></span><div style="margin-top:12px">yükleniyor...</div></div>';
+    await refreshAll();
+  }
+  
+  let items = state.esyalar;
+  if (q) {
+    items = items.filter(e => {
+      const hay = [e.isim, e.etiketler, e.notlar, e.kutu_kodu, e.serbest_konum, e.oda_kodu]
+        .map(x => (x || '').toString().toLowerCase()).join(' ');
+      return hay.includes(q);
+    });
+  }
+  
+  // Sort by most recent
+  items.sort((a, b) => (b.guncellenme_tarihi || '').localeCompare(a.guncellenme_tarihi || ''));
+  
+  if (items.length === 0) {
+    if (q) {
+      container.innerHTML = `<div class="empty"><div class="empty-title">"${escapeHtml(q)}" için sonuç yok</div><div class="empty-sub">Farklı bir kelime dene veya ekle.</div></div>`;
+    } else {
+      container.innerHTML = `<div class="empty"><div class="empty-title">Henüz eşya yok</div><div class="empty-sub">İlk eşyanı eklemek için + sembolüne dokun.</div></div>`;
+    }
+    return;
+  }
+  
+  const label = q ? `${items.length} sonuç` : 'son eklenenler';
+  container.innerHTML = `
+    <div class="section-label">${label}</div>
+    <div class="item-list">${items.map(itemCardHtml).join('')}</div>
+  `;
+}
+
+function itemCardHtml(e) {
+  const loc = locText(e);
+  const thumb = e.foto_url
+    ? `<img src="${escapeAttr(e.foto_url)}" loading="lazy" referrerpolicy="no-referrer">`
+    : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/></svg>`;
+  return `
+    <button class="item-card" onclick="showDetail('${e.id}')">
+      <div class="item-thumb">${thumb}</div>
+      <div class="item-body">
+        <div class="item-name">${escapeHtml(e.isim)}</div>
+        <div class="item-loc">${loc}</div>
+      </div>
+    </button>
+  `;
+}
+
+function locText(e) {
+  if (e.konum_tipi === 'kutu') {
+    const odaIsim = odaIsmi(e.oda_kodu);
+    return `<span>${escapeHtml(e.kutu_kodu)}</span><span class="sep">·</span><span class="extra">${escapeHtml(odaIsim)}</span>`;
+  } else {
+    const odaIsim = odaIsmi(e.oda_kodu);
+    return `<span class="extra">${escapeHtml(odaIsim)}: ${escapeHtml(e.serbest_konum)}</span>`;
+  }
+}
+
+function odaIsmi(kod) {
+  if (!kod) return '';
+  const o = state.odalar.find(x => x.kod === kod);
+  return o ? o.isim : kod;
+}
+
+// ============================================================
+// DETAIL
+// ============================================================
+async function showDetail(id) {
+  goto('detail');
+  const c = document.getElementById('detail-content');
+  c.innerHTML = '<div class="empty"><span class="spinner"></span></div>';
+  
+  let e;
+  try {
+    e = await api('esyaGetir', { id });
+  } catch { return; }
+  
+  const photo = e.foto_url
+    ? `<div class="detail-photo"><img src="${escapeAttr(e.foto_url)}" referrerpolicy="no-referrer"></div>`
+    : '';
+  
+  const odaIsim = odaIsmi(e.oda_kodu);
+  const konumStr = e.konum_tipi === 'kutu'
+    ? `Kutu ${escapeHtml(e.kutu_kodu)} · ${escapeHtml(odaIsim)}`
+    : `${escapeHtml(odaIsim)} — ${escapeHtml(e.serbest_konum)}`;
+  
+  c.innerHTML = `
+    ${photo}
+    <div class="detail-name">${escapeHtml(e.isim)}</div>
+    <div class="detail-loc">${konumStr}</div>
+    
+    ${e.etiketler ? `<div class="detail-meta-row"><div class="detail-meta-label">Etiketler</div><div class="detail-meta-value">${escapeHtml(e.etiketler)}</div></div>` : ''}
+    ${e.notlar ? `<div class="detail-meta-row"><div class="detail-meta-label">Notlar</div><div class="detail-meta-value">${escapeHtml(e.notlar)}</div></div>` : ''}
+    <div class="detail-meta-row"><div class="detail-meta-label">Eklendi</div><div class="detail-meta-value">${formatDate(e.olusturulma_tarihi)}</div></div>
+    
+    <div class="detail-actions">
+      <button class="btn btn-danger" onclick="silEsya('${e.id}')">Sil</button>
+    </div>
+  `;
+}
+
+async function silEsya(id) {
+  if (!confirm('Bu eşyayı silmek istediğine emin misin?')) return;
+  try {
+    await api('esyaSil', { id });
+    state.esyalar = state.esyalar.filter(e => e.id !== id);
+    toast('Silindi');
+    goto('search');
+  } catch {}
+}
+
+// ============================================================
+// ADD ITEM
+// ============================================================
+function initAddView() {
+  // Reset
+  document.getElementById('f-isim').value = '';
+  document.getElementById('f-serbest').value = '';
+  document.getElementById('f-etiketler').value = '';
+  document.getElementById('f-notlar').value = '';
+  state.fotoBase64 = null;
+  state.fotoContentType = null;
+  document.getElementById('photo-zone').innerHTML = `
+    <input type="file" accept="image/*" id="photo-input" capture="environment">
+    <svg class="photo-zone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l2-3h4l2 3"/></svg>
+    <div class="photo-zone-text">Fotoğraf çek veya seç</div>
+  `;
+  bindPhotoInput();
+  populateKutuSelect();
+  populateOdaSelect();
+  setKonumTipi('kutu');
+}
+
+function bindPhotoInput() {
+  document.getElementById('photo-input').addEventListener('change', onPhotoSelected);
+}
+
+async function onPhotoSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  try {
+    const { blob, base64 } = await resizeAndEncode(file);
+    state.fotoBase64 = base64;
+    state.fotoContentType = blob.type;
+    
+    const url = URL.createObjectURL(blob);
+    const zone = document.getElementById('photo-zone');
+    zone.innerHTML = `
+      <input type="file" accept="image/*" id="photo-input" capture="environment">
+      <img src="${url}">
+      <div class="change-hint">Değiştir</div>
+    `;
+    bindPhotoInput();
+  } catch (err) {
+    toast('Fotoğraf okunamadı', true);
+  }
+}
+
+function resizeAndEncode(file, maxDim = 1400) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(async (blob) => {
+        const base64 = await blobToBase64(blob);
+        resolve({ blob, base64 });
+      }, 'image/jpeg', 0.85);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function blobToBase64(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+function setKonumTipi(tip) {
+  state.konumTipi = tip;
+  document.querySelectorAll('.segment button[data-konum]').forEach(b => {
+    b.classList.toggle('on', b.dataset.konum === tip);
+  });
+  document.getElementById('field-kutu').style.display = tip === 'kutu' ? '' : 'none';
+  document.getElementById('field-serbest').style.display = tip === 'serbest' ? '' : 'none';
+}
+
+function populateKutuSelect() {
+  const sel = document.getElementById('f-kutu');
+  if (state.kutular.length === 0) {
+    sel.innerHTML = '<option value="">-- önce kutu ekle --</option>';
+    return;
+  }
+  sel.innerHTML = state.kutular.map(k => {
+    const oda = odaIsmi(k.oda_kodu);
+    const desc = k.aciklama ? ` (${escapeHtml(k.aciklama)})` : '';
+    return `<option value="${k.kod}">${k.kod} — ${escapeHtml(oda)}${desc}</option>`;
+  }).join('');
+}
+
+function populateOdaSelect() {
+  const sel = document.getElementById('f-oda-serbest');
+  if (state.odalar.length === 0) {
+    sel.innerHTML = '<option value="">-- önce oda ekle --</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Oda seç...</option>' +
+    state.odalar.map(o => `<option value="${o.kod}">${o.kod} — ${escapeHtml(o.isim)}</option>`).join('');
+}
+
+async function kaydetEsya() {
+  const isim = document.getElementById('f-isim').value.trim();
+  if (!isim) { toast('Eşya adı zorunlu', true); return; }
+  
+  const btn = document.getElementById('kaydet-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,.3); border-top-color:white"></span> Kaydediliyor...';
+  
+  try {
+    let foto_url = '', foto_id = '';
+    
+    if (state.fotoBase64) {
+      const upRes = await api('fotoYukle', {
+        base64: state.fotoBase64,
+        contentType: state.fotoContentType,
+        dosyaAdi: 'esya_' + Date.now() + '.jpg',
+      });
+      foto_url = upRes.url;
+      foto_id = upRes.id;
+    }
+    
+    const data = {
+      isim,
+      konum_tipi: state.konumTipi,
+      etiketler: document.getElementById('f-etiketler').value.trim(),
+      notlar: document.getElementById('f-notlar').value.trim(),
+      foto_url, foto_id,
+    };
+    
+    if (state.konumTipi === 'kutu') {
+      const kutu_kodu = document.getElementById('f-kutu').value;
+      if (!kutu_kodu) { toast('Kutu seç', true); throw new Error('no-kutu'); }
+      data.kutu_kodu = kutu_kodu;
+      const kutu = state.kutular.find(k => k.kod === kutu_kodu);
+      data.oda_kodu = kutu ? kutu.oda_kodu : '';
+    } else {
+      const serbest = document.getElementById('f-serbest').value.trim();
+      const oda = document.getElementById('f-oda-serbest').value;
+      if (!serbest) { toast('Konum tarifi gir', true); throw new Error('no-serbest'); }
+      if (!oda) { toast('Oda seç', true); throw new Error('no-oda'); }
+      data.serbest_konum = serbest;
+      data.oda_kodu = oda;
+    }
+    
+    await api('esyaEkle', data);
+    await refreshAll();
+    toast('Eklendi');
+    goto('search');
+  } catch (err) {
+    // toast already shown by api()
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Kaydet';
+  }
+}
+
+// ============================================================
+// LISTELER
+// ============================================================
+function setListeTab(tab) {
+  state.listeTab = tab;
+  document.querySelectorAll('#view-listeler .tabs button').forEach(b => {
+    b.classList.toggle('on', b.dataset.tab === tab);
+  });
+  renderListe();
+}
+
+function renderListe() {
+  const c = document.getElementById('liste-content');
+  const tab = state.listeTab;
+  
+  if (tab === 'esya') {
+    if (state.esyalar.length === 0) {
+      c.innerHTML = '<div class="empty"><div class="empty-sub">Henüz eşya yok.</div></div>';
+      return;
+    }
+    c.innerHTML = `<div class="item-list">${state.esyalar.map(itemCardHtml).join('')}</div>`;
+  } else if (tab === 'kutu') {
+    if (state.kutular.length === 0) {
+      c.innerHTML = '<div class="empty"><div class="empty-sub">Henüz kutu yok.</div></div>';
+      return;
+    }
+    c.innerHTML = state.kutular.map(k => {
+      const oda = odaIsmi(k.oda_kodu);
+      return `
+        <div class="row">
+          <div class="row-code">${escapeHtml(k.kod)}</div>
+          <div class="row-body">
+            <div class="row-title">${escapeHtml(oda)}</div>
+            ${k.aciklama ? `<div class="row-sub">${escapeHtml(k.aciklama)}</div>` : ''}
+          </div>
+          <button class="row-action" onclick="silKutu('${k.id}')" title="Sil">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>
+          </button>
+        </div>
+      `;
+    }).join('');
+  } else if (tab === 'oda') {
+    if (state.odalar.length === 0) {
+      c.innerHTML = '<div class="empty"><div class="empty-sub">Henüz oda yok. İlk olarak bir oda ekle.</div></div>';
+      return;
+    }
+    c.innerHTML = state.odalar.map(o => `
+      <div class="row">
+        <div class="row-code">${escapeHtml(o.kod)}</div>
+        <div class="row-body">
+          <div class="row-title">${escapeHtml(o.isim)}</div>
+        </div>
+        <button class="row-action" onclick="silOda('${o.id}')" title="Sil">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></svg>
+        </button>
+      </div>
+    `).join('');
+  }
+}
+
+function listeAddNew() {
+  if (state.listeTab === 'oda') openOdaEkleModal();
+  else if (state.listeTab === 'kutu') openKutuEkleModal();
+  else goto('add');
+}
+
+function openOdaEkleModal() {
+  const modal = document.getElementById('modal');
+  modal.innerHTML = `
+    <h3>Yeni oda</h3>
+    <div class="form">
+      <div class="field">
+        <label>Kod (2 harf)</label>
+        <input type="text" id="m-oda-kod" maxlength="3" placeholder="MF" style="text-transform:uppercase">
+        <div class="field-hint">Mutfak için MF, Salon için SL gibi.</div>
+      </div>
+      <div class="field">
+        <label>Oda adı</label>
+        <input type="text" id="m-oda-isim" placeholder="Mutfak">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
+      <button class="btn btn-primary" onclick="kaydetOda()">Ekle</button>
+    </div>
+  `;
+  openModal();
+  setTimeout(() => document.getElementById('m-oda-kod').focus(), 100);
+}
+
+async function kaydetOda() {
+  const kod = document.getElementById('m-oda-kod').value.trim().toUpperCase();
+  const isim = document.getElementById('m-oda-isim').value.trim();
+  if (!kod || !isim) { toast('Kod ve isim zorunlu', true); return; }
+  
+  try {
+    await api('odaEkle', { kod, isim });
+    await refreshAll();
+    closeModal();
+    renderListe();
+    toast('Oda eklendi');
+  } catch {}
+}
+
+function openKutuEkleModal() {
+  if (state.odalar.length === 0) {
+    toast('Önce en az bir oda ekle', true);
+    return;
+  }
+  const modal = document.getElementById('modal');
+  // Suggest next kutu code based on selected oda
+  modal.innerHTML = `
+    <h3>Yeni kutu</h3>
+    <div class="form">
+      <div class="field">
+        <label>Oda</label>
+        <select id="m-kutu-oda" onchange="suggestKutuKod()">
+          ${state.odalar.map(o => `<option value="${o.kod}">${o.kod} — ${escapeHtml(o.isim)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Kutu kodu</label>
+        <input type="text" id="m-kutu-kod" placeholder="MF1" style="text-transform:uppercase">
+        <div class="field-hint">İspirtolu kalemle kutunun üstüne yazacağın kod.</div>
+      </div>
+      <div class="field">
+        <label>Açıklama <span style="color:var(--mute); font-weight:400">(opsiyonel)</span></label>
+        <input type="text" id="m-kutu-aciklama" placeholder="örn. Kış kıyafetleri">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="closeModal()">İptal</button>
+      <button class="btn btn-primary" onclick="kaydetKutu()">Ekle</button>
+    </div>
+  `;
+  openModal();
+  suggestKutuKod();
+}
+
+function suggestKutuKod() {
+  const oda = document.getElementById('m-kutu-oda').value;
+  const mevcut = state.kutular.filter(k => k.oda_kodu === oda);
+  let n = 1;
+  while (mevcut.some(k => k.kod === oda + n)) n++;
+  document.getElementById('m-kutu-kod').value = oda + n;
+}
+
+async function kaydetKutu() {
+  const oda_kodu = document.getElementById('m-kutu-oda').value;
+  const kod = document.getElementById('m-kutu-kod').value.trim().toUpperCase();
+  const aciklama = document.getElementById('m-kutu-aciklama').value.trim();
+  if (!kod) { toast('Kod zorunlu', true); return; }
+  
+  try {
+    await api('kutuEkle', { kod, oda_kodu, aciklama });
+    await refreshAll();
+    closeModal();
+    renderListe();
+    toast('Kutu eklendi');
+  } catch {}
+}
+
+async function silOda(id) {
+  if (!confirm('Bu odayı silmek istediğine emin misin?')) return;
+  try {
+    await api('odaSil', { id });
+    state.odalar = state.odalar.filter(o => o.id !== id);
+    renderListe();
+    toast('Silindi');
+  } catch {}
+}
+
+async function silKutu(id) {
+  if (!confirm('Bu kutuyu silmek istediğine emin misin?')) return;
+  try {
+    await api('kutuSil', { id });
+    state.kutular = state.kutular.filter(k => k.id !== id);
+    renderListe();
+    toast('Silindi');
+  } catch {}
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+async function saveSettings() {
+  const url = document.getElementById('s-url').value.trim();
+  const token = document.getElementById('s-token').value.trim();
+  if (!url || !token) { toast('Hepsini doldur', true); return; }
+  
+  state.url = url;
+  state.token = token;
+  localStorage.setItem('env_url', url);
+  localStorage.setItem('env_token', token);
+  
+  // Test
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'ping', token }),
+    });
+    const j = await res.json();
+    if (j.ok) {
+      toast('Bağlantı başarılı');
+      await refreshAll();
+      goto('search');
+    } else {
+      toast('Hata: ' + (j.hata || 'bilinmiyor'), true);
+    }
+  } catch (err) {
+    toast('Bağlanılamadı: ' + err.message, true);
+  }
+}
+
+// ============================================================
+// MODAL / TOAST
+// ============================================================
+function openModal() { document.getElementById('modal-bg').classList.add('on'); }
+function closeModal() { document.getElementById('modal-bg').classList.remove('on'); }
+
+let toastTimer;
+function toast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('error', error);
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2400);
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+function formatDate(s) {
+  if (!s) return '';
+  try {
+    const d = new Date(s);
+    return d.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' });
+  } catch { return s; }
+}
+
+// Sticky topbar shadow
+window.addEventListener('scroll', () => {
+  document.getElementById('topbar').classList.toggle('scrolled', window.scrollY > 4);
+});
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  if (!state.url || !state.token) {
+    goto('settings');
+    return;
+  }
+  await refreshAll();
+  renderSearchResults();
+  
+  // Service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
